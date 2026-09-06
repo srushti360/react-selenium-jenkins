@@ -24,8 +24,15 @@ pipeline {
                 bat '''
                 @echo off
                 echo Starting React application...
-                start "React App" cmd /c "npm start"
-                timeout /t 10 /nobreak
+
+                powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+                "$p = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c set BROWSER=none&& npm start' -WindowStyle Hidden -PassThru; Start-Sleep -Seconds 10"
+
+                echo Waiting for React application...
+                powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+                "$ready=$false; for($i=0;$i -lt 30;$i++){ try { Invoke-WebRequest -Uri 'http://localhost:3000' -UseBasicParsing -TimeoutSec 2 | Out-Null; $ready=$true; break } catch { Start-Sleep -Seconds 2 } }; if(-not $ready){ exit 1 }"
+
+                echo React application is running.
                 '''
             }
         }
